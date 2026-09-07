@@ -1,3 +1,21 @@
+/* 外观开关：暗房 / 画册 —— 记在浏览器里，下次还是你选的那个 */
+(function () {
+  "use strict";
+  var root = document.documentElement;
+  function apply(t) {
+    root.setAttribute("data-theme", t);
+    try { localStorage.setItem("rolls-skin", t); } catch (e) {}
+    var bs = document.querySelectorAll(".skin button");
+    for (var i = 0; i < bs.length; i++)
+      bs[i].setAttribute("aria-pressed", bs[i].getAttribute("data-skin") === t ? "true" : "false");
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest(".skin button");
+    if (b) apply(b.getAttribute("data-skin"));
+  });
+  apply(root.getAttribute("data-theme") === "album" ? "album" : "dark");
+})();
+
 /* 胶片颗粒：画一次，铺满全站，静止不动 */
 (function () {
   "use strict";
