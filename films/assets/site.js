@@ -1,3 +1,21 @@
+/* 胶片颗粒：画一次，铺满全站，静止不动 */
+(function () {
+  "use strict";
+  var el = document.getElementById("grain");
+  if (!el) return;
+  if (matchMedia("(prefers-reduced-motion:reduce)").matches) { /* 静态的，保留 */ }
+  var n = 180, c = document.createElement("canvas");
+  c.width = c.height = n;
+  var x = c.getContext("2d"), d = x.createImageData(n, n);
+  for (var i = 0; i < d.data.length; i += 4) {
+    var v = 128 + (Math.random() - 0.5) * 46;
+    d.data[i] = d.data[i + 1] = d.data[i + 2] = v;
+    d.data[i + 3] = 26;
+  }
+  x.putImageData(d, 0, 0);
+  el.style.backgroundImage = "url(" + c.toDataURL() + ")";
+})();
+
 /* 卷 Rolls —— 联系表交互：放大镜 / 看片台 / 手风琴 / 位置指示条 */
 (function () {
   "use strict";
