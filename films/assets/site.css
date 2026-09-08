@@ -46,6 +46,11 @@ body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
 /* 房间的暗角 */
 body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   background:radial-gradient(118% 82% at 50% 36%, transparent 34%, rgba(0,0,0,.70) 100%)}
+
+/* ── 桌面的纹理：暗房是台面，画册是纸。铺满、静止、几乎看不见。 ── */
+#desk{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-repeat:repeat;background-size:420px 420px;
+  opacity:.30;mix-blend-mode:soft-light;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='420' height='420' filter='url(%23t)'/></svg>")}
 /* 胶片颗粒：静止不动，铺满 */
 #grain{position:fixed;inset:0;z-index:70;pointer-events:none;opacity:.42;
   background-repeat:repeat;background-size:180px 180px;mix-blend-mode:overlay}
@@ -59,6 +64,7 @@ a{color:inherit}
 
 /* ── 门口的牌子：顶部导航 ──────────────────────────────────── */
 nav.nav{position:sticky;top:0;z-index:20;border-bottom:1px solid var(--line);
+  box-shadow:0 3px 0 -2px var(--line2);
   background:rgba(16,12,8,.86);backdrop-filter:blur(10px) saturate(.8)}
 nav.nav .in{display:flex;align-items:baseline;gap:1.1rem;flex-wrap:wrap;
   padding:.6rem clamp(1rem,3.6vw,2.6rem)}
@@ -93,8 +99,9 @@ h1{position:relative;font-family:var(--display);font-weight:400;margin:1.5rem 0 
 h1 em{font-family:var(--lat);font-style:italic;font-weight:400;font-size:.3em;
   letter-spacing:.03em;display:inline-block;transform:translateY(-.6em);
   margin-left:.42em;color:var(--copper)}
-.deck{display:grid;gap:var(--gap) clamp(1.4rem,3vw,2.6rem);margin-top:1.8rem;padding-top:1.2rem;
-  border-top:1px solid var(--line2);grid-template-columns:1fr;position:relative}
+.deck{display:grid;gap:var(--gap) clamp(1.4rem,3vw,2.6rem);margin-top:1.8rem;padding-top:1.4rem;
+  border-top:1px solid var(--line2);box-shadow:0 -4px 0 -3px var(--line2);
+  grid-template-columns:1fr;position:relative}
 @media(min-width:760px){.deck{grid-template-columns:1.3fr 1fr}}
 .deck p{margin:0;font-family:var(--cjk);font-size:.95rem;line-height:2.1;color:var(--dim);max-width:40ch}
 .deck p:first-child{font-size:1.06rem;color:var(--fg);border-left:2px solid var(--copper);
@@ -140,17 +147,32 @@ section:not(.rollcard){padding-top:clamp(2.6rem,6.5vw,5rem)}
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='15'><rect x='3.5' y='3.5' width='17' height='8' rx='2.6' fill='%23F2E6D4'/></svg>");
   opacity:.92}
 .perf.lo{transform:scaleY(-1)}
-.frames{display:flex;gap:3px;padding:4px 6px 15px;align-items:flex-end;position:relative}
-/* 统一格位：半格竖、全画幅横。照片按真实方向 contain 进去，不旋转、不裁切。 */
-.strip{--ar:.72}
-.strip.full{--ar:1.5}
+.frames{display:flex;gap:3px;padding:4px 6px;align-items:flex-end;position:relative}
+/* 一条底片 + 底下一道刻度尺；左边一个行号。片基上不写字。 */
+.row{--ar:.72;display:grid;grid-template-columns:clamp(12px,1.8vw,20px) minmax(0,1fr);
+  column-gap:clamp(.3rem,.9vw,.55rem);align-items:center}
+.row.full{--ar:1.5}
+.row .strip{grid-column:2;grid-row:1}
+.row .scale{grid-column:2;grid-row:2}
+.rl{grid-column:1;grid-row:1;justify-self:center;
+  font-family:var(--mono);font-size:.56rem;font-weight:500;letter-spacing:.06em;
+  color:var(--copper);border:1px solid var(--line2);border-radius:1px;
+  padding:.14rem .18rem;line-height:1}
+/* 刻度尺：一格一个刻度，编号印在尺上 */
+.scale{display:flex;gap:3px;padding:5px 6px 0;user-select:none}
+.scale i{flex:0 0 calc((100% - (var(--per) - 1) * 3px) / var(--per));
+  position:relative;padding-top:5px;text-align:center;font-style:normal;
+  font-family:var(--mono);font-size:8px;line-height:1;letter-spacing:0;
+  color:var(--dim2);transition:color .12s}
+.scale i::before{content:"";position:absolute;left:50%;top:0;width:1px;height:3px;
+  background:currentColor;opacity:.55}
+.scale i.pick{color:var(--reg-dim)}
+.scale i.on{color:var(--fg)}
+.scale i.on::before{opacity:1;height:4px}
 .fr{position:relative;flex:0 0 auto;background:none;border:0;padding:0;margin:0;
   display:block;cursor:pointer;line-height:0;text-decoration:none;color:inherit}
 .fr img{height:var(--fh,78px);width:auto;
   box-shadow:0 0 0 1px rgba(0,0,0,.5),0 1px 4px rgba(0,0,0,.35)}
-.fr .fn{position:absolute;left:0;right:0;bottom:-13px;text-align:center;
-  font-family:var(--mono);font-size:8px;letter-spacing:.02em;line-height:1;color:var(--edge-dim)}
-.fr.pick .fn{color:var(--edge)}
 /* 蜡笔圈选 */
 .fr.pick::after{content:"";position:absolute;left:-3px;right:-3px;top:-3px;bottom:-1px;
   border:2px solid var(--reg);border-radius:1px;transform:rotate(-.7deg);
@@ -166,11 +188,15 @@ section:not(.rollcard){padding-top:clamp(2.6rem,6.5vw,5rem)}
 .sheetbar b{font-weight:400;color:var(--copper-hi);letter-spacing:.1em}
 .sheetbar .hint{margin-left:auto;font-family:var(--mono);font-size:.62rem;
   letter-spacing:.08em;color:var(--dim2)}
-.sheet{background:var(--room2);padding:clamp(.5rem,1.5vw,.9rem);border-radius:2px;
+.sheet{position:relative;background:var(--room2);padding:clamp(.9rem,2vw,1.4rem);border-radius:2px;
   border:1px solid var(--line);
   box-shadow:inset 0 0 46px rgba(0,0,0,.6),0 18px 46px rgba(0,0,0,.5)}
-.sheet .strip{margin-bottom:7px}
-.sheet .strip:last-child{margin-bottom:0}
+/* 四角的套准十字：印刷／放大时对位用的标记 */
+.sheet::before{content:"";position:absolute;inset:5px;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'><g fill='none' stroke='%23B4794A' stroke-width='.9' opacity='.6'><circle cx='6.5' cy='6.5' r='3.3'/><path d='M6.5 0v13M0 6.5h13'/></g></svg>"),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'><g fill='none' stroke='%23B4794A' stroke-width='.9' opacity='.6'><circle cx='6.5' cy='6.5' r='3.3'/><path d='M6.5 0v13M0 6.5h13'/></g></svg>"),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'><g fill='none' stroke='%23B4794A' stroke-width='.9' opacity='.6'><circle cx='6.5' cy='6.5' r='3.3'/><path d='M6.5 0v13M0 6.5h13'/></g></svg>"),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'><g fill='none' stroke='%23B4794A' stroke-width='.9' opacity='.6'><circle cx='6.5' cy='6.5' r='3.3'/><path d='M6.5 0v13M0 6.5h13'/></g></svg>");background-repeat:no-repeat;
+  background-position:0 0,100% 0,0 100%,100% 100%}
+.sheet .row{margin-bottom:11px}
+.sheet .row:last-child{margin-bottom:0}
 .sheet .frames{align-items:stretch}
 .sheet .fr{flex:0 0 calc((100% - (var(--per) - 1) * 3px) / var(--per));aspect-ratio:var(--ar)}
 .sheet .fr img{width:100%;height:100%;object-fit:contain;background:#0B0806}
@@ -182,7 +208,11 @@ section:not(.rollcard){padding-top:clamp(2.6rem,6.5vw,5rem)}
   background:var(--room2);border:1px solid var(--line);
   box-shadow:inset 0 0 34px rgba(0,0,0,.55)}
 .reel .inner{width:max-content}
-.reel .frames{padding:6px 8px 17px}
+.reel .frames{padding:6px 8px}
+.reel .scale{padding:5px 8px 4px}
+.reel .scale i{flex:0 0 auto;width:calc(var(--fh,78px) * var(--ar))}
+.reel .row{grid-template-columns:minmax(0,1fr)}
+.reel .row .strip,.reel .row .scale{grid-column:1}
 .reel .fr{scroll-snap-align:center;height:var(--fh,78px);width:calc(var(--fh,78px) * var(--ar))}
 .reel .fr img{width:100%;height:100%;object-fit:contain;background:#0B0806}
 /* 位置指示条：过片计数器 */
@@ -355,6 +385,33 @@ blockquote cite{margin-left:auto;font-family:var(--mono);font-style:normal;font-
 @keyframes mark{0%,100%{box-shadow:0 0 0 0 rgba(228,115,91,0)}
   18%{box-shadow:0 0 0 5px rgba(228,115,91,.55)}}
 
+
+/* ── 分节记号：双细线 + 一枚光圈叶片。全站唯一的装饰母题。 ── */
+.orn{display:flex;align-items:center;gap:clamp(.9rem,2.6vw,1.8rem);
+  margin:clamp(3.2rem,8vw,5.6rem) 0;color:var(--copper)}
+.orn i{flex:1 1 auto;position:relative;height:1px;background:currentColor;opacity:.32}
+.orn i::after{content:"";position:absolute;left:0;right:0;top:3px;height:1px;
+  background:currentColor;opacity:.55}
+.orn span{flex:0 0 auto;width:clamp(25px,3.2vw,32px);opacity:.85}
+.orn span svg{display:block;width:100%;height:auto}
+.orn.q{margin:clamp(1.8rem,4.5vw,3rem) 0}
+/* 页脚上方的尾花：一只 135 暗盒 */
+.endmark{display:flex;justify-content:center;color:var(--copper);opacity:.58;
+  margin:clamp(3.6rem,8.5vw,5.4rem) 0 clamp(.6rem,1.6vw,1.1rem)}
+.endmark svg{width:70px;height:auto}
+/* 题记 */
+.epi{margin:clamp(1.6rem,4vw,2.6rem) auto 0;max-width:44ch;text-align:center;
+  font-family:var(--cjk);font-size:clamp(.98rem,2.2vw,1.14rem);line-height:2.2;
+  letter-spacing:.05em;color:var(--dim)}
+/* 版面里的「注」与「我的」 */
+.mark,.voice{margin:0;padding:.85rem 0 0;border-top:1px solid var(--line2)}
+.mark b,.voice b{display:block;font-family:var(--mono);font-size:.58rem;font-weight:500;
+  letter-spacing:.34em;color:var(--copper);margin-bottom:.55rem}
+.mark p,.voice p{margin:0;font-family:var(--cjk);font-size:.85rem;line-height:2.1;
+  color:var(--dim2)}
+.voice{border-top:1px solid var(--copper)}
+.voice p{color:var(--dim)}
+
 /* ══════════════════════════════════════════════════════════════════════
    关于 / 页脚 / 翻页
    ══════════════════════════════════════════════════════════════════════ */
@@ -378,7 +435,8 @@ blockquote cite{margin-left:auto;font-family:var(--mono);font-style:normal;font-
   letter-spacing:.02em;text-transform:none;color:var(--fg);margin-top:.3rem}
 .pager a:hover b{color:var(--copper-hi)}
 .pager .r{margin-left:auto;text-align:right}
-.colophon{margin-top:clamp(3.4rem,8vw,6rem);border-top:1px solid var(--line2);
+.colophon{margin-top:clamp(1.4rem,3vw,2rem);border-top:1px solid var(--copper);
+  box-shadow:0 -4px 0 -3px var(--line2);
   padding:1.4rem 0 4.5rem;display:grid;gap:1.1rem var(--gap);grid-template-columns:1fr;
   font-family:var(--mono);font-size:.64rem;line-height:2;letter-spacing:.05em;color:var(--dim2)}
 @media(min-width:700px){.colophon{grid-template-columns:repeat(4,1fr)}}
@@ -476,6 +534,21 @@ blockquote cite{margin-left:auto;font-family:var(--mono);font-style:normal;font-
 @keyframes markA{0%,100%{box-shadow:0 0 0 0 rgba(158,51,37,0)}
   18%{box-shadow:0 0 0 5px rgba(158,51,37,.5)}}
 :root[data-theme="album"] .plate figure.hit{animation:markA 1.6s ease}
+
+
+/* ── 画册：纸的织理，贴片上的内框线 ──────────────────────────── */
+:root[data-theme="album"] #desk{opacity:.42;mix-blend-mode:multiply;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='420' height='420' filter='url(%23t)'/></svg>")}
+/* 贴片里再画一道内框线 —— 相册上给照片"起框"的老做法 */
+:root[data-theme="album"] .lb::after{content:"";position:absolute;
+  inset:clamp(6px,1.1vw,10px);border:1px solid rgba(21,23,26,.14);pointer-events:none}
+/* 深色托盘落在浅纸上，套准十字要反过来 */
+:root[data-theme="album"] .sheet::before{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'><g fill='none' stroke='%23E7DCCB' stroke-width='.9' opacity='.45'><circle cx='6.5' cy='6.5' r='3.3'/><path d='M6.5 0v13M0 6.5h13'/></g></svg>"),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'><g fill='none' stroke='%23E7DCCB' stroke-width='.9' opacity='.45'><circle cx='6.5' cy='6.5' r='3.3'/><path d='M6.5 0v13M0 6.5h13'/></g></svg>"),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'><g fill='none' stroke='%23E7DCCB' stroke-width='.9' opacity='.45'><circle cx='6.5' cy='6.5' r='3.3'/><path d='M6.5 0v13M0 6.5h13'/></g></svg>"),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'><g fill='none' stroke='%23E7DCCB' stroke-width='.9' opacity='.45'><circle cx='6.5' cy='6.5' r='3.3'/><path d='M6.5 0v13M0 6.5h13'/></g></svg>")}
+:root[data-theme="album"] .scale i.pick{color:var(--reg)}
+:root[data-theme="album"] .scale i.on{color:var(--fg)}
+/* 行号和刻度在深色托盘里，画册主题下要沿用暗房的配色才看得见 */
+:root[data-theme="album"] .rl{color:#D8A06C;border-color:#4A392C}
+:root[data-theme="album"] .scale i{color:#8A7B69}
+:root[data-theme="album"] .endmark{opacity:.42}
 
 /* ── 外观开关：暗房 / 画册 ─────────────────────────────────────── */
 .skin{margin-left:auto;display:flex;align-items:baseline;gap:.1rem;

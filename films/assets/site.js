@@ -88,12 +88,20 @@
     v.querySelector('[data-d="1"]').disabled = i === r.frames.length - 1;
     var fs = box.querySelectorAll(".fr");
     for (var j = 0; j < fs.length; j++) fs[j].classList.toggle("cur", +fs[j].dataset.i === i);
+    markScale(box, i);
   }
+  /* 刻度尺：把第 i 格的编号点亮（-1 = 全灭） */
+  function markScale(box, i) {
+    var sc = box.querySelectorAll(".scale i");
+    for (var j = 0; j < sc.length; j++) sc[j].classList.toggle("on", j === i);
+  }
+
   function closeViewer(box) {
     var v = box.querySelector(".viewer");
     if (v) v.hidden = true;
     var fs = box.querySelectorAll(".fr.cur");
     for (var j = 0; j < fs.length; j++) fs[j].classList.remove("cur");
+    markScale(box, -1);
   }
 
   /* ── 位置指示条 ─────────────────────────────────── */
@@ -158,10 +166,14 @@
       if (host) {
         host.addEventListener("pointerover", function (e) {
           var b = e.target.closest(".fr");
-          if (b) loupeShow(rid, D[rid].frames[+b.dataset.i], e);
+          if (b) { loupeShow(rid, D[rid].frames[+b.dataset.i], e); markScale(box, +b.dataset.i); }
         });
         host.addEventListener("pointermove", loupeMove);
-        host.addEventListener("pointerleave", loupeHide);
+        host.addEventListener("pointerleave", function () {
+          loupeHide();
+          var v = box.querySelector(".viewer");
+          markScale(box, v && !v.hidden ? +v.getAttribute("data-i") : -1);
+        });
       }
     }
   });
