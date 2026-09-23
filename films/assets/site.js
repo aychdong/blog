@@ -31,6 +31,31 @@
       sc = Math.max(.2, Math.min(1, Math.min(bw / h, bh / w)));
     img.style.transform = "rotate(" + r + "deg) scale(" + sc.toFixed(3) + ")";
   };
+  /* 先出中图（960px，快），大图（2000px）下好了悄悄换上。同一格同一方向，换的时候不跳。
+     屏幕小、或者浏览器开了省流量，就只用中图。 */
+  window.__hi = function (img) {
+    var box = img.parentElement || img, r = box.getBoundingClientRect();
+    var need = Math.max(r.width, r.height) * (window.devicePixelRatio || 1);
+    var sd = navigator.connection && navigator.connection.saveData;
+    return !sd && need > 1100;
+  };
+  window.__prog = function (img, base, id, onReady) {
+    var lo = base + "assets/mid/" + id + ".webp", hi = base + "assets/lg/" + id + ".webp";
+    var tok = (img.__tok = (img.__tok || 0) + 1);
+    img.onerror = null;
+    img.onload = function () { if (onReady) onReady(); };
+    img.src = lo;
+    if (!window.__hi(img)) return;
+    var p = new Image();
+    p.onload = function () {
+      var sw = function () {
+        if (img.__tok !== tok) return;          /* 已经翻到别的格了 */
+        img.src = hi;
+      };
+      if (p.decode) p.decode().then(sw, sw); else sw();
+    };
+    p.src = hi;
+  };
   /* 窗口大小变了，缩放系数要重算 */
   var t;
   addEventListener("resize", function () {
@@ -151,12 +176,11 @@
     var st = window.__rotStore(), fid = rid + "-" + f.n;
     im.style.transform = "";
     im.setAttribute("data-rot", fid in st ? st[fid] : (+f.rot || 0));
-    im.onload = function () { window.__rotFit(im); };
-    im.src = mid(rid, f.n);
+    window.__prog(im, BASE, rid + "-" + f.n, function () { window.__rotFit(im); });
     im.alt = f.cap || ("第 " + f.n + " 格");
     v.querySelector(".fno").textContent = rid + " · " + f.n;
     var cap = v.querySelector(".cap");
-    cap.textContent = f.cap || "这一格没写说明";
+    cap.textContent = f.cap || "";   /* 没写就空着，别让访客看到作者的提示 */
     cap.className = "cap" + (f.cap ? "" : " none");
     var vn = v.querySelector(".note");
     if (vn) vn.textContent = f.note || "";
@@ -293,7 +317,7 @@
       var r = window.FILMDATA[rid];
       for (var j = 0; j < r.frames.length; j++) {
         var f = r.frames[j];
-        LIST.push({id: rid + "-" + f.n, rid: rid, n: f.n, cap: f.cap, b: f.b,
+        LIST.push({id: rid + "-" + f.n, rid: rid, n: f.n, cap: f.cap, b: f.b, x: f.x,
                    note: f.note, rot: f.rot,
                    pick: f.pick, place: r.place, roll: r.zh});
       }
@@ -304,10 +328,7 @@
   var IX = {};
   for (var i = 0; i < LIST.length; i++) IX[LIST[i].id] = i;
 
-  var src = function (f) {
-    return BASE + (f.b ? "assets/photos/" + f.id + "-1600.webp"
-                       : "assets/mid/" + f.id + ".webp");
-  };
+  var src = function (f) { return BASE + "assets/mid/" + f.id + ".webp"; };   /* 预读用 */
 
   var box = null, cur = -1, prevHash = "", capOn = true;
   try { capOn = localStorage.getItem("rolls-cap") !== "0"; } catch (e) {}
@@ -322,13 +343,15 @@
         '<img alt="">' +
         '<button class="nx" type="button" aria-label="下一格">&#8594;</button>' +
         '<div class="tools">' +
+          '<button type="button" data-zoom aria-pressed="false" title="1:1 看颗粒（Z）">1:1</button>' +
           '<button type="button" data-rot title="转 90 度">转</button>' +
           '<button type="button" data-ana aria-pressed="false">分析</button>' +
           '<button type="button" data-cap>说明</button>' +
           '<button type="button" data-close>关闭 &#10005;</button>' +
         '</div>' +
-        '<div class="keys">&#8592; &#8594; 过片 · T 转 · A 分析 · C 说明 · Esc 退出</div>' +
+        '<div class="keys">&#8592; &#8594; 过片 · Z 1:1 看颗粒 · T 转 · A 分析 · C 说明 · Esc 退出</div>' +
         '<div class="rothint"></div>' +
+        '<div class="zm" hidden><img alt="" draggable="false"><span class="zmi"></span></div>' +
       '</div>' +
       '<div class="ana"><button type="button" class="anatog"></button>' +
         '<div class="w"></div><div class="h"></div>' +
@@ -350,6 +373,7 @@
     box.querySelector("[data-cap]").addEventListener("click", toggleCap);
     box.querySelector("[data-rot]").addEventListener("click", function () { rot(90); });
     box.querySelector("[data-ana]").addEventListener("click", toggleAna);
+    zoomWire();
     box.querySelector(".stage").addEventListener("click", function (e) {
       if (e.target === e.currentTarget) close();
     });
@@ -367,6 +391,7 @@
 
   function rot(by) {
     var f = LIST[cur]; if (!f) return;
+    zoomOff();
     ROT[f.id] = ((rotOf(f) + by) % 360 + 360) % 360;
     window.__rotSave(ROT);
     var im = box.querySelector(".stage img");
@@ -392,7 +417,10 @@
   }
   function drawAna() {
     var f = LIST[cur];
-    if (!f || !window.COLORLAB) return;
+    if (!f) return;
+    if (!window.COLORLAB) {          /* 从链接直接打开时，色彩分析的代码还没就位：等一下再画 */
+      setTimeout(function () { if (LIST[cur] === f && anaOn) drawAna(); }, 80); return;
+    }
     var w = box.querySelector(".ana .w"), h = box.querySelector(".ana .h"),
         nm = box.querySelector(".ana .nums");
     window.COLORLAB.frame(f.id).then(function (d) {
@@ -411,6 +439,129 @@
     });
   }
 
+  /* ── 1:1 看颗粒 ──────────────────────────────────
+     选用的格有原尺寸文件（每毫米 127 像素，约 3200 dpi）；其余的格用 2000px 版。
+     Z / 双击 / 按钮：适屏 → 1:1 → 2:1 → 适屏。拖动、触控板双指滑动都能平移。
+     「1:1」= 图上一个像素对屏幕上一个物理像素，这是看颗粒的标准看法。 */
+  var zlev = 0, zx = 0, zy = 0, zw = 0, zh = 0, zr = 0, ztok = 0;
+  function zq(sel) { return box.querySelector(sel); }
+  function zbtn() {
+    var b = zq("[data-zoom]");
+    b.textContent = ["1:1", "1:1", "2:1"][zlev];
+    b.setAttribute("aria-pressed", zlev ? "true" : "false");
+    b.title = ["1:1 看颗粒（Z）", "再按一次放到 2:1（Z）", "再按一次回到适屏（Z / Esc）"][zlev];
+  }
+  function zoomOff() {
+    if (!box) return;
+    ztok++;
+    if (!zlev) return;
+    zlev = 0;
+    var z = zq(".zm"); z.hidden = true; z.classList.remove("px");
+    z.querySelector("img").removeAttribute("src");
+    box.classList.remove("zoomed"); zbtn();
+  }
+  function zclamp() {
+    var S = zq(".stage"), W = S.clientWidth, H = S.clientHeight;
+    var rw = zr % 180 ? zh : zw, rh = zr % 180 ? zw : zh;
+    zx = rw <= W ? W / 2 : Math.min(rw / 2, Math.max(W - rw / 2, zx));
+    zy = rh <= H ? H / 2 : Math.min(rh / 2, Math.max(H - rh / 2, zy));
+    var im = zq(".zm img");
+    im.style.width = zw + "px"; im.style.height = zh + "px";
+    im.style.transform = "translate(" + (zx - zw / 2).toFixed(1) + "px," +
+                         (zy - zh / 2).toFixed(1) + "px) rotate(" + zr + "deg)";
+  }
+  /* 屏幕上一个点（相对 stage）落在图上的哪儿（0-1），放大后让它留在原处 */
+  function zpick(px, py) {
+    var S = zq(".stage").getBoundingClientRect(), cx, cy, w, h, r;
+    if (zlev) { cx = zx; cy = zy; w = zw; h = zh; r = zr; }
+    else {
+      var R = zq(".stage > img").getBoundingClientRect();
+      r = rotOf(LIST[cur]);
+      cx = R.left + R.width / 2 - S.left; cy = R.top + R.height / 2 - S.top;
+      w = r % 180 ? R.height : R.width; h = r % 180 ? R.width : R.height;
+    }
+    var dx = px - cx, dy = py - cy, a = -r * Math.PI / 180;
+    var ux = dx * Math.cos(a) - dy * Math.sin(a), uy = dx * Math.sin(a) + dy * Math.cos(a);
+    return [Math.min(1, Math.max(0, .5 + ux / (w || 1))), Math.min(1, Math.max(0, .5 + uy / (h || 1)))];
+  }
+  function zinfo(f, lev, ready) {
+    var t = lev === 1 ? "1:1" : "2:1";
+    if (!ready) return t + " · 载入中…";
+    return f.x ? t + " · 原尺寸 " + f.x[0] + "×" + f.x[1] + " · 约 3200 dpi"
+               : t + " · 2000px 版 · 选用的格才有原尺寸";
+  }
+  function zoomSet(lev, px, py) {
+    var f = LIST[cur]; if (!f) return;
+    var S = zq(".stage"), main = zq(".stage > img");
+    if (px == null) { px = S.clientWidth / 2; py = S.clientHeight / 2; }
+    var uv = zpick(px, py), dpr = window.devicePixelRatio || 1, tok = ++ztok;
+    var hi = BASE + "assets/" + (f.x ? "x/" : "lg/") + f.id + ".webp";
+    var z = zq(".zm"), im = z.querySelector("img"), info = z.querySelector(".zmi");
+    function place(nw, nh) {
+      zw = nw / dpr * lev; zh = nh / dpr * lev; zr = rotOf(f);
+      var ox = (uv[0] - .5) * zw, oy = (uv[1] - .5) * zh, a = zr * Math.PI / 180;
+      zx = px - (ox * Math.cos(a) - oy * Math.sin(a));
+      zy = py - (ox * Math.sin(a) + oy * Math.cos(a));
+      zclamp();
+    }
+    function ready() {
+      if (LIST[cur] !== f || !zlev) return;
+      im.src = hi; info.textContent = zinfo(f, zlev, true);
+      z.classList.toggle("px", zlev === 2);
+    }
+    zlev = lev; box.classList.add("zoomed"); z.hidden = false; zbtn();
+    z.classList.toggle("px", lev === 2 && im.getAttribute("src") === hi);
+    if (f.x) {                                  /* 尺寸事先知道：先拿手上的图顶着，原尺寸到了再换 */
+      place(f.x[0], f.x[1]);
+      if (im.getAttribute("src") === hi) { info.textContent = zinfo(f, lev, true); return; }
+      im.src = main.currentSrc || main.src;
+      info.textContent = zinfo(f, lev, false);
+      var p = new Image(); p.onload = ready; p.src = hi;
+    } else {
+      var lg = (main.currentSrc || "").indexOf("/lg/") >= 0 && main.naturalWidth;
+      if (lg) { place(main.naturalWidth, main.naturalHeight); ready(); return; }
+      im.src = main.currentSrc || main.src;
+      place(main.naturalWidth * 2000 / Math.max(main.naturalWidth, main.naturalHeight, 1),
+            main.naturalHeight * 2000 / Math.max(main.naturalWidth, main.naturalHeight, 1));
+      info.textContent = zinfo(f, lev, false);
+      var q = new Image();
+      q.onload = function () {
+        if (tok !== ztok) return;
+        place(q.naturalWidth, q.naturalHeight); ready();
+      };
+      q.src = hi;
+    }
+  }
+  function zoomCycle() { if (zlev === 0) zoomSet(1); else if (zlev === 1) zoomSet(2); else zoomOff(); }
+  function zoomWire() {
+    var z = zq(".zm"), drag = null;
+    zq("[data-zoom]").addEventListener("click", zoomCycle);
+    zq(".stage > img").addEventListener("dblclick", function (e) {
+      e.preventDefault();
+      var S = zq(".stage").getBoundingClientRect();
+      zoomSet(1, e.clientX - S.left, e.clientY - S.top);
+    });
+    z.addEventListener("dblclick", function (e) { e.preventDefault(); zoomOff(); });
+    z.addEventListener("pointerdown", function (e) {
+      if (e.button) return;
+      drag = {x: e.clientX, y: e.clientY, zx: zx, zy: zy, id: e.pointerId};
+      try { z.setPointerCapture(e.pointerId); } catch (er) {}
+      z.classList.add("drag");
+    });
+    z.addEventListener("pointermove", function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      zx = drag.zx + e.clientX - drag.x; zy = drag.zy + e.clientY - drag.y; zclamp();
+    });
+    var up = function () { drag = null; z.classList.remove("drag"); };
+    z.addEventListener("pointerup", up); z.addEventListener("pointercancel", up);
+    z.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      if (e.ctrlKey) return;
+      zx -= e.deltaX; zy -= e.deltaY; zclamp();
+    }, {passive: false});
+    addEventListener("resize", function () { if (zlev) zclamp(); });
+  }
+
   function toggleCap() {
     capOn = !capOn;
     try { localStorage.setItem("rolls-cap", capOn ? "1" : "0"); } catch (e) {}
@@ -422,17 +573,14 @@
     var f = LIST[k]; cur = k;
     var im = box.querySelector(".stage img");
     im.classList.remove("sw"); void im.offsetWidth; im.classList.add("sw");
-    im.onerror = function () {            // 万一大图不在，退回中图，别给个破图标
-      im.onerror = null; im.src = BASE + "assets/mid/" + f.id + ".webp";
-    };
+    zoomOff();
     im.style.transform = "";
     im.setAttribute("data-rot", rotOf(f));
-    im.onload = function () { window.__rotFit(im); };
-    im.src = src(f);
+    window.__prog(im, BASE, f.id, function () { window.__rotFit(im); });
     im.alt = f.cap || (f.rid + " 卷第 " + f.n + " 格");
     box.querySelector(".fno").textContent = f.rid + " · " + f.n;
     var cap = box.querySelector(".cap");
-    cap.textContent = f.cap || "这一格没写说明";
+    cap.textContent = f.cap || "";   /* 没写就空着，别让访客看到作者的提示 */
     cap.className = "cap" + (f.cap ? "" : " none");
     box.querySelector(".note").textContent = f.note || "";
     box.querySelector(".rothint").textContent = "";
@@ -462,6 +610,7 @@
 
   function close() {
     if (!box || box.hidden) return;
+    zoomOff();
     box.classList.remove("in");
     document.documentElement.style.overflow = "";
     setTimeout(function () { box.hidden = true; }, 200);
@@ -485,12 +634,13 @@
 
   addEventListener("keydown", function (e) {
     if (!box || box.hidden) return;
-    if (e.key === "Escape") { e.preventDefault(); close(); }
+    if (e.key === "Escape") { e.preventDefault(); if (zlev) zoomOff(); else close(); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); go(cur - 1); }
     else if (e.key === "ArrowRight") { e.preventDefault(); go(cur + 1); }
     else if (e.key === "c" || e.key === "C") { e.preventDefault(); toggleCap(); }
     else if (e.key === "t" || e.key === "T") { e.preventDefault(); rot(90); }
     else if (e.key === "a" || e.key === "A") { e.preventDefault(); toggleAna(); }
+    else if (e.key === "z" || e.key === "Z") { e.preventDefault(); zoomCycle(); }
   });
 
   window.__vw = {open: open, close: close};
@@ -614,17 +764,14 @@
     ids.forEach(function (k) {
       var r = D[k];
       r.frames.forEach(function (f) {
-        out.push({id: k + "-" + f.n, rid: k, n: f.n, cap: f.cap, b: f.b,
+        out.push({id: k + "-" + f.n, rid: k, n: f.n, cap: f.cap, b: f.b, x: f.x,
                   note: f.note, rot: f.rot,
                   pick: f.pick, place: r.place, roll: r.zh, fmt: r.fmt});
       });
     });
     return out;
   }
-  function src(f) {
-    return BASE + (f.b ? "assets/photos/" + f.id + "-1600.webp"
-                       : "assets/mid/" + f.id + ".webp");
-  }
+  function src(f) { return BASE + "assets/mid/" + f.id + ".webp"; }   /* 预读用 */
 
   function loadRoll(rid, startId) {
     rollKey = rid;
@@ -647,14 +794,12 @@
     if (k < 0 || k >= list.length) return;
     cur = k; var f = list[k];
     img.classList.remove("sw"); void img.offsetWidth; img.classList.add("sw");
-    img.onerror = function () { img.onerror = null; img.src = BASE + "assets/mid/" + f.id + ".webp"; };
     img.style.transform = "";
     img.setAttribute("data-rot", lrotOf(f));
-    img.onload = function () { window.__rotFit(img); };
-    img.src = src(f);
+    window.__prog(img, BASE, f.id, function () { window.__rotFit(img); });
     img.alt = f.cap || (f.rid + " 卷第 " + f.n + " 格");
     fno.textContent = f.rid + " · " + f.n;
-    cap.textContent = f.cap || "这一格没写说明";
+    cap.textContent = f.cap || "";   /* 没写就空着，别让访客看到作者的提示 */
     cap.className = "cap" + (f.cap ? "" : " none");
     if (lnote) lnote.textContent = f.note || "";
     meta.textContent = f.roll + "　" + f.place + "　" + (k + 1) + " / " + list.length +
@@ -1093,4 +1238,14 @@ window.COLORLAB = (function () {
     });
   }, {rootMargin: "240px"});
   Array.prototype.forEach.call(boxes, function (b) { io.observe(b); });
+})();
+
+
+/* 版面大图的模糊占位（20px 的缩略图拉大当底色）：图到了就撤掉 */
+(function () {
+  "use strict";
+  Array.prototype.forEach.call(document.querySelectorAll("img[data-lq]"), function (im) {
+    function off() { im.style.backgroundImage = ""; im.removeAttribute("data-lq"); }
+    if (im.complete && im.naturalWidth) off(); else im.addEventListener("load", off);
+  });
 })();
