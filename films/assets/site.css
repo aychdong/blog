@@ -78,7 +78,7 @@ nav.nav ol a{text-decoration:none;color:var(--dim);padding:.1rem .3rem;
   border-bottom:1px solid transparent;transition:color .18s}
 nav.nav ol a:hover{color:var(--fg);border-bottom-color:var(--copper)}
 nav.nav ol a[aria-current]{color:var(--copper-hi);border-bottom-color:var(--copper)}
-nav.nav .end{margin-left:auto;font-family:var(--cjk);font-size:.78rem;letter-spacing:.2em;
+nav.nav .end{font-family:var(--cjk);font-size:.78rem;letter-spacing:.2em;
   color:var(--dim);text-decoration:none}
 nav.nav .end:hover{color:var(--copper-hi)}
 
@@ -188,7 +188,7 @@ section:not(.rollcard){padding-top:clamp(2.6rem,6.5vw,5rem)}
 .sheetbar b{font-weight:400;color:var(--copper-hi);letter-spacing:.1em}
 .sheetbar .hint{margin-left:auto;font-family:var(--mono);font-size:.62rem;
   letter-spacing:.08em;color:var(--dim2)}
-.sheet{position:relative;background:var(--room2);padding:clamp(.9rem,2vw,1.4rem);border-radius:2px;
+.sheet{position:relative;padding:clamp(.9rem,2vw,1.4rem);border-radius:2px;
   border:1px solid var(--line);
   box-shadow:inset 0 0 46px rgba(0,0,0,.6),0 18px 46px rgba(0,0,0,.5)}
 /* 四角的套准十字：印刷／放大时对位用的标记 */
@@ -205,7 +205,7 @@ section:not(.rollcard){padding-top:clamp(2.6rem,6.5vw,5rem)}
 .reel{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
   scroll-snap-type:x proximity;scrollbar-width:thin;border-radius:2px;
   scrollbar-color:var(--line2) transparent;
-  background:var(--room2);border:1px solid var(--line);
+  border:1px solid var(--line);
   box-shadow:inset 0 0 34px rgba(0,0,0,.55)}
 .reel .inner{width:max-content}
 .reel .frames{padding:6px 8px}
@@ -236,7 +236,7 @@ section:not(.rollcard){padding-top:clamp(2.6rem,6.5vw,5rem)}
 #loupe .lm b{color:#F7E4D2;font-weight:500}
 
 /* ── 看片台：房间里唯一真正亮着的东西 ───────────────────────── */
-.viewer{margin-top:.7rem;background:var(--room2);border:1px solid var(--line2);
+.viewer{margin-top:.7rem;border:1px solid var(--line2);
   display:grid;grid-template-columns:1fr;border-radius:2px;overflow:hidden;
   box-shadow:0 22px 60px rgba(0,0,0,.55)}
 @media(min-width:800px){.viewer{grid-template-columns:1fr 268px}}
@@ -265,7 +265,7 @@ section:not(.rollcard){padding-top:clamp(2.6rem,6.5vw,5rem)}
 .viewer .tag.off{border:1px solid var(--line2);color:var(--dim2)}
 .viewer .nav{display:flex;gap:.4rem;margin-top:auto;padding-top:.6rem}
 .viewer .nav button{flex:1;appearance:none;border:1px solid var(--line2);
-  background:var(--room3);color:var(--dim);padding:.46rem;cursor:pointer;border-radius:1px;
+  color:var(--dim);padding:.46rem;cursor:pointer;border-radius:1px;
   font-family:var(--cjk);font-size:.76rem;letter-spacing:.06em;transition:.16s}
 .viewer .nav button:hover:not(:disabled){border-color:var(--copper);color:var(--copper-hi)}
 .viewer .nav button:disabled{opacity:.28;cursor:default}
@@ -385,7 +385,6 @@ blockquote cite{margin-left:auto;font-family:var(--mono);font-style:normal;font-
 @keyframes mark{0%,100%{box-shadow:0 0 0 0 rgba(228,115,91,0)}
   18%{box-shadow:0 0 0 5px rgba(228,115,91,.55)}}
 
-
 /* ── 分节记号：双细线 + 一枚光圈叶片。全站唯一的装饰母题。 ── */
 .orn{display:flex;align-items:center;gap:clamp(.9rem,2.6vw,1.8rem);
   margin:clamp(3.2rem,8vw,5.6rem) 0;color:var(--copper)}
@@ -464,8 +463,6 @@ blockquote cite{margin-left:auto;font-family:var(--mono);font-style:normal;font-
    ══════════════════════════════════════════════════════════════════════ */
 :root[data-theme="album"]{
   --room:#DBDDD5;        /* 冷灰绿纸 */
-  --room2:#17120E;       /* 器物（联系表、长卷、看片台）仍然是暗的 */
-  --room3:#241C16;
   --fg:#15171A;          /* 墨 */
   --dim:#4A4F55;
   --dim2:#7C8189;
@@ -515,7 +512,7 @@ blockquote cite{margin-left:auto;font-family:var(--mono);font-style:normal;font-
   box-shadow:inset 0 0 40px rgba(0,0,0,.5),0 10px 30px rgba(21,23,26,.22)}
 :root[data-theme="album"] .viewer{border-color:#8F9289;
   box-shadow:0 12px 36px rgba(21,23,26,.24)}
-:root[data-theme="album"] .viewer .side{background:var(--room2);color:#E7DCCB}
+:root[data-theme="album"] .viewer .side{color:#E7DCCB}
 :root[data-theme="album"] .viewer .fno{color:#D8A06C}
 :root[data-theme="album"] .viewer .cap{color:#E7DCCB}
 :root[data-theme="album"] .viewer .cap.none,
@@ -535,14 +532,11 @@ blockquote cite{margin-left:auto;font-family:var(--mono);font-style:normal;font-
   18%{box-shadow:0 0 0 5px rgba(158,51,37,.5)}}
 :root[data-theme="album"] .plate figure.hit{animation:markA 1.6s ease}
 
-
 /* ── 画册：纸的织理，贴片上的内框线 ──────────────────────────── */
 :root[data-theme="album"] #desk{opacity:.42;mix-blend-mode:multiply;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='420' height='420' filter='url(%23t)'/></svg>")}
 /* 贴片里再画一道内框线 —— 相册上给照片"起框"的老做法 */
 :root[data-theme="album"] .lb::after{content:"";position:absolute;
   inset:clamp(6px,1.1vw,10px);border:1px solid rgba(21,23,26,.14);pointer-events:none}
-/* 深色托盘落在浅纸上，套准十字要反过来 */
-:root[data-theme="album"] .sheet::before{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'><g fill='none' stroke='%23E7DCCB' stroke-width='.9' opacity='.45'><circle cx='6.5' cy='6.5' r='3.3'/><path d='M6.5 0v13M0 6.5h13'/></g></svg>"),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'><g fill='none' stroke='%23E7DCCB' stroke-width='.9' opacity='.45'><circle cx='6.5' cy='6.5' r='3.3'/><path d='M6.5 0v13M0 6.5h13'/></g></svg>"),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'><g fill='none' stroke='%23E7DCCB' stroke-width='.9' opacity='.45'><circle cx='6.5' cy='6.5' r='3.3'/><path d='M6.5 0v13M0 6.5h13'/></g></svg>"),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'><g fill='none' stroke='%23E7DCCB' stroke-width='.9' opacity='.45'><circle cx='6.5' cy='6.5' r='3.3'/><path d='M6.5 0v13M0 6.5h13'/></g></svg>")}
 :root[data-theme="album"] .scale i.pick{color:var(--reg)}
 :root[data-theme="album"] .scale i.on{color:var(--fg)}
 /* 行号和刻度在深色托盘里，画册主题下要沿用暗房的配色才看得见 */
@@ -551,7 +545,7 @@ blockquote cite{margin-left:auto;font-family:var(--mono);font-style:normal;font-
 :root[data-theme="album"] .endmark{opacity:.42}
 
 /* ── 外观开关：暗房 / 画册 ─────────────────────────────────────── */
-.skin{margin-left:auto;display:flex;align-items:baseline;gap:.1rem;
+.skin{display:flex;align-items:baseline;gap:.1rem;
   border:1px solid var(--line2);border-radius:2px;padding:1px}
 .skin button{appearance:none;border:0;background:none;cursor:pointer;
   font-family:var(--cjk);font-size:.76rem;letter-spacing:.14em;
@@ -599,7 +593,7 @@ nav.nav{view-transition-name:filmnav}
        sepia(.45) saturate(1.9) hue-rotate(-18deg)}
 /* 彩负的做法：先把动态范围压进一条窄带（没有纯白），再上橙色片基遮罩。
    全靠这一条滤镜链，没有叠加层、没有 JS 改样式 —— 所以切多少次都是同一个结果。 */
-.sheet.neg .fr img{background:transparent;filter:var(--neg)}
+.sheet.neg .fr img{background:transparent;}
 .sheet.neg .fr{background:transparent}
 .sheet.neg .scale i{opacity:.45}
 
@@ -614,13 +608,6 @@ nav.nav{view-transition-name:filmnav}
 
 /* ── 手动显影：盖一层，用手指／鼠标擦开 ─────────────────────────── */
 .sheetwrap{position:relative}
-canvas.rub{position:absolute;inset:0;z-index:6;cursor:crosshair;touch-action:none;
-  border-radius:2px}
-canvas.rub[hidden]{display:none}
-.rubtip{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:7;
-  pointer-events:none;font-family:var(--cjk);font-size:.9rem;letter-spacing:.2em;
-  color:rgba(231,220,203,.62);text-shadow:0 1px 8px rgba(0,0,0,.8);transition:opacity .4s}
-.rubtip[hidden]{display:none}
 
 /* ── 随便翻一格 ─────────────────────────────────────────────────── */
 .surprise{display:flex;margin:clamp(2.4rem,6vw,3.6rem) auto 0;appearance:none;cursor:pointer;
@@ -752,7 +739,7 @@ nav.nav ol a:hover .en,nav.nav ol a[aria-current] .en{color:var(--copper)}
 
 /* 台子 */
 .ltstage{position:relative;display:flex;align-items:center;justify-content:center;
-  background:#080605;border:1px solid var(--line);border-radius:2px;
+  border:1px solid var(--line);border-radius:2px;
   height:clamp(300px,58vh,620px);
   box-shadow:inset 0 0 60px rgba(0,0,0,.6),0 20px 54px rgba(0,0,0,.45);isolation:isolate}
 .ltbox{position:relative;display:flex;align-items:center;justify-content:center;
@@ -766,7 +753,7 @@ nav.nav ol a:hover .en,nav.nav ol a[aria-current] .en{color:var(--copper)}
              0 0 60px rgba(226,238,252,.11),0 16px 44px rgba(0,0,0,.6)}
 .ltbox img.sw{animation:vwin .3s cubic-bezier(.2,.85,.35,1) both}
 .ltnav{position:absolute;top:0;bottom:0;width:clamp(2.4rem,5vw,3.6rem);appearance:none;border:0;
-  background:none;cursor:pointer;color:#5E5245;font-size:1.3rem;z-index:2;transition:color .18s}
+  background:none;cursor:pointer;font-size:1.3rem;z-index:2;transition:color .18s}
 .ltnav.pv{left:0}.ltnav.nx{right:0}
 .ltnav:hover{color:var(--copper-hi)}
 .ltnav:disabled{opacity:.25;cursor:default}
@@ -788,7 +775,7 @@ nav.nav ol a:hover .en,nav.nav ol a[aria-current] .en{color:var(--copper)}
 
 /* 底下的整卷：横着拉 */
 .ltrail{margin-top:.9rem;overflow-x:auto;overflow-y:hidden;
-  background:var(--room2);border:1px solid var(--line);border-radius:2px;
+  border:1px solid var(--line);border-radius:2px;
   box-shadow:inset 0 0 26px rgba(0,0,0,.5);scrollbar-width:thin;
   scrollbar-color:var(--line2) transparent}
 .ltrail .in{display:flex;gap:2px;width:max-content;padding:6px;
@@ -816,15 +803,6 @@ nav.nav ol a:hover .en,nav.nav ol a[aria-current] .en{color:var(--copper)}
 
 /* ── 色轮 ───────────────────────────────────────────────────────── */
 .dial{width:var(--dsz,230px);max-width:100%;flex:0 0 auto}
-.dialsvg{width:100%;height:auto;display:block;overflow:visible}
-.dialsvg .ring{fill:none;stroke:var(--line2);stroke-width:.7;opacity:.85}
-.dialsvg .spoke{stroke:var(--line2);stroke-width:.6;opacity:.6}
-.dialsvg .ax{fill:var(--dim2);font-family:var(--mono);font-size:8px;letter-spacing:.06em;
-  text-anchor:middle;dominant-baseline:middle}
-.dialsvg .dot{stroke:#0B0806;stroke-width:.9;cursor:crosshair;transition:r .12s}
-.dialsvg .dot:hover{r:5.4;stroke:#fff;stroke-width:1.1}
-.dialsvg .cast circle{fill:none;stroke:var(--copper-hi);stroke-width:1.3}
-.dialsvg .cast line{stroke:var(--copper-hi);stroke-width:1;opacity:.75}
 
 .dialbox{padding-top:clamp(2.4rem,6vw,4rem)}
 .dialrow{display:flex;gap:clamp(1.2rem,3.5vw,2.6rem);align-items:flex-start;flex-wrap:wrap}
@@ -844,7 +822,7 @@ nav.nav ol a:hover .en,nav.nav ol a[aria-current] .en{color:var(--copper)}
 .cardrow .dial{opacity:.85;margin-left:auto}
 .dial.mini .ax{display:none}                 /* 小尺寸下轴标反而是噪音 */
 .dial.mini .dot{r:2.6}
-.dial.mini .cast circle{r:6}
+
 @media(max-width:620px){.cardrow{flex-direction:column}.cardrow .dial{align-self:center}}
 
 /* ── 索引 ───────────────────────────────────────────────────────── */
@@ -864,7 +842,7 @@ nav.nav ol a:hover .en,nav.nav ol a[aria-current] .en{color:var(--copper)}
 .idxtools{display:flex;gap:.4rem;margin-left:auto;flex-wrap:wrap}
 
 .idx{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:4px}
-.cel{appearance:none;border:0;padding:0;margin:0;background:#0B0806;cursor:zoom-in;
+.cel{appearance:none;border:0;padding:0;margin:0;cursor:zoom-in;
   aspect-ratio:1;position:relative;line-height:0;border-radius:1px;overflow:hidden}
 .cel img{width:100%;height:100%;object-fit:contain}
 .cel span{position:absolute;left:0;right:0;bottom:0;padding:2px 0 1px;
@@ -894,10 +872,10 @@ nav.nav ol a:hover .en,nav.nav ol a[aria-current] .en{color:var(--copper)}
 .plotsvg .pt line{stroke:var(--copper-hi);stroke-width:1}
 .plotsvg .pt .core{fill:var(--copper-hi);stroke:none}
 .plotsvg .pt .hit{fill:transparent}
-.plotsvg .pn{fill:var(--fg);font-family:var(--cjk);font-size:12px;text-anchor:middle}
+
 .plotsvg .pr{fill:var(--dim2);font-family:var(--mono);font-size:8px;letter-spacing:.1em;
   text-anchor:middle}
-.plotsvg .pt:hover .pn,.plotsvg .pt:focus-visible .pn{fill:var(--copper-hi)}
+
 .plotsvg .pt:hover .core{r:5}
 .plotsvg .scale line{stroke:var(--dim2);stroke-width:1}
 .plotsvg .scale text{fill:var(--dim2);font-family:var(--mono);font-size:8px;
@@ -959,7 +937,6 @@ nav.nav ol a:hover .en,nav.nav ol a[aria-current] .en{color:var(--copper)}
 :root[data-theme="album"] .ltbox img{
   box-shadow:0 0 0 1px rgba(21,23,26,.16),0 0 0 10px #FFF,
              0 0 0 11px var(--line2),0 10px 30px rgba(21,23,26,.2)}
-:root[data-theme="album"] .ltnav{color:#8F9289}
 :root[data-theme="album"] .ltnav:hover:not(:disabled){color:var(--copper)}
 /* 索引格 */
 .cel{background:var(--cell)}
@@ -1001,10 +978,10 @@ nav.nav ol a:hover .en,nav.nav ol a[aria-current] .en{color:var(--copper)}
 .crgb .gl{stroke:var(--line2);stroke-width:.4;opacity:.45}
 
 /* 看片台里的「分析」面板 */
-.vw .ana{display:none;gap:clamp(1rem,3vw,2rem);align-items:center;
+.vw .ana{gap:clamp(1rem,3vw,2rem);align-items:center;
   padding:.4rem clamp(1rem,4vw,2.4rem) .2rem;flex-wrap:wrap;justify-content:center}
 .vw.showana .ana{display:flex}
-.vw .ana .w{width:clamp(120px,15vw,164px);flex:0 0 auto}
+.vw .ana .w{flex:0 0 auto}
 .vw .ana .h{width:clamp(190px,24vw,268px);flex:0 0 auto}
 .vw .ana .nums{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;
   color:#8A7B69;line-height:2;flex:0 0 auto;white-space:nowrap}
@@ -1030,7 +1007,6 @@ nav.nav ol a:hover .en,nav.nav ol a[aria-current] .en{color:var(--copper)}
 .ltinfo .note:empty,.viewer .note:empty{display:none}
 .viewer .note{font-family:var(--cjk);font-size:.8rem;line-height:1.9;color:var(--dim2);
   margin:.35rem 0 0;white-space:pre-line}
-:root[data-theme="album"] .viewer .note{color:#A2907A}
 
 /* ══════════════════════════════════════════════════════════════════════
    转片：只转「看的那张大图」，联系表上的小片条不动
