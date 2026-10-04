@@ -1,3 +1,49 @@
+/* ══ p25 · 手机上的联系表：一条底片剪成两半排 ══
+   电脑上一行就是一条底片（半格 12 格、全画幅 6 格）；手机屏幕窄，硬塞一行片子只有指甲盖大。
+   窄屏时把每一条从中间剪开，后半条接在下一行（行号只印在前半条上）；屏幕变宽再接回去。
+   只是把格子挪个位置，格子本身、顺序、点击都不变。 */
+(function () {
+  "use strict";
+  if (!window.matchMedia) return;
+  var mq = matchMedia("(max-width:640px)");
+  function split(sheet) {
+    if (sheet.classList.contains("cut")) return;
+    var per = parseInt(sheet.style.getPropertyValue("--per"), 10) || 12, half = Math.ceil(per / 2);
+    sheet.setAttribute("data-per", per); sheet.style.setProperty("--per", half); sheet.classList.add("cut");
+    [].slice.call(sheet.querySelectorAll(".row")).forEach(function (row) {
+      var frs = [].slice.call(row.querySelectorAll(".frames > .fr")), sc = [].slice.call(row.querySelectorAll(".scale > i"));
+      if (frs.length <= half) return;
+      var nr = row.cloneNode(false), rl = row.querySelector(".rl");
+      nr.classList.add("cont");
+      nr.innerHTML = '<span class="rl" aria-hidden="true">' + (rl ? rl.textContent : "") + '</span>' +
+        '<div class="strip"><div class="perf"></div><div class="frames"></div><div class="perf lo"></div></div>' +
+        '<div class="scale" aria-hidden="true"></div>';
+      var fbox = nr.querySelector(".frames"), sbox = nr.querySelector(".scale");
+      frs.slice(half).forEach(function (f) { fbox.appendChild(f); });
+      sc.slice(half).forEach(function (i) { sbox.appendChild(i); });
+      row.parentNode.insertBefore(nr, row.nextSibling);
+    });
+  }
+  function join(sheet) {
+    if (!sheet.classList.contains("cut")) return;
+    [].slice.call(sheet.querySelectorAll(".row.cont")).forEach(function (nr) {
+      var row = nr.previousElementSibling;
+      if (!row) return;
+      var fbox = row.querySelector(".frames"), sbox = row.querySelector(".scale");
+      [].slice.call(nr.querySelectorAll(".frames > .fr")).forEach(function (f) { fbox.appendChild(f); });
+      [].slice.call(nr.querySelectorAll(".scale > i")).forEach(function (i) { sbox.appendChild(i); });
+      nr.parentNode.removeChild(nr);
+    });
+    sheet.style.setProperty("--per", sheet.getAttribute("data-per") || 12);
+    sheet.classList.remove("cut");
+  }
+  function apply() {
+    [].forEach.call(document.querySelectorAll(".sheet"), mq.matches ? split : join);
+  }
+  apply();
+  if (mq.addEventListener) mq.addEventListener("change", apply); else if (mq.addListener) mq.addListener(apply);
+})();
+
 /* ── 转片：存哪儿、怎么摆得下 ───────────────────────────────────────
    方向存两层：content.json 里的 rot 是发布出去的，localStorage 是自己临时转的。
    转 90 度之后横竖对调，得缩一下才不会顶出框，所以要量一下容器。 */
@@ -120,7 +166,7 @@
   el.style.backgroundImage = "url(" + c.toDataURL() + ")";
 })();
 
-/* 卷 Rolls —— 联系表交互：放大镜 / 看片台 / 手风琴 / 位置指示条 */
+/* 胶卷 Rolls —— 联系表交互：放大镜 / 看片台 / 手风琴 / 位置指示条 */
 (function () {
   "use strict";
   var D = window.FILMDATA;                 // {rid: {id,en,zh,fmt,place,frames:[{n,cap,pick}]}}
@@ -418,18 +464,67 @@
     box.querySelector(".vstrip").addEventListener("click", function (e) {
       var nb = e.target.closest(".nb"); if (nb) { e.stopPropagation(); go(+nb.dataset.i); }
     });
-    /* 手机上用手指划：竖着拿时上下划（左右划留给系统的「返回」），横着拿时左右划 */
-    var sx = null, sy = 0;
+    /* 手机上用手指拖着片条走：竖着拿上下拖（左右划留给系统的「返回」），横着拿左右拖。
+       片子跟着手指动；松手时拖过五分之一格、或者甩得快，就翻到下一格，不然弹回去。
+       嵌在看片台页里时：片条整个进了屏幕才接手（没进屏幕时照常滚页面）；翻到第一格 / 最后一格再拖，就交还给页面。 */
+    var T = null;
+    function dragEls() { return [st.querySelector(":scope > img"), st.querySelector(".vl"), st.querySelector(".vr"), st.querySelector(".vink")]; }
+    function setDrag(d, vertical) {
+      var v = d ? (vertical ? "0 " + d.toFixed(1) + "px" : d.toFixed(1) + "px 0") : "";
+      dragEls().forEach(function (el) { if (el) el.style.translate = v; });
+    }
     st.addEventListener("touchstart", function (e) {
-      if (box.classList.contains("zoomed") || box.classList.contains("embed") || e.touches.length > 1) { sx = null; return; }
-      sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+      T = null;
+      if (box.classList.contains("zoomed") || e.touches.length > 1) return;
+      if (e.target.closest && e.target.closest(".tools, .vclose, .pc, .zm, .swhint, button")) return;
+      var em = box.classList.contains("embed"), vt = box.classList.contains("vert");
+      if (em && vt && !box.classList.contains("inview")) return;
+      var p = e.touches[0];
+      T = {x: p.clientX, y: p.clientY, ax: 0, d: 0, page: false, sy: scrollY, vert: vt, em: em, h: []};
     }, {passive: true});
-    st.addEventListener("touchend", function (e) {
-      if (sx === null) return;
-      var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
-      if (box.classList.contains("vert")) { if (Math.abs(dy) > 45 && Math.abs(dy) > Math.abs(dx) * 1.3) go(cur + (dy < 0 ? 1 : -1)); }
-      else if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) go(cur + (dx < 0 ? 1 : -1));
-    }, {passive: true});
+    st.addEventListener("touchmove", function (e) {
+      if (!T) return;
+      if (e.touches.length > 1) { endDrag(true); return; }
+      var p = e.touches[0], dx = p.clientX - T.x, dy = p.clientY - T.y;
+      if (!T.ax) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        var along = T.vert ? Math.abs(dy) : Math.abs(dx), across = T.vert ? Math.abs(dx) : Math.abs(dy);
+        if (along < across * 1.1) { T = null; return; }                // 方向不对：交给浏览器
+        T.ax = 1; box.classList.add("dragging");
+      }
+      var d = T.vert ? dy : dx, n = d < 0 ? 1 : -1;                    // 往上 / 往左拖 = 下一格
+      if (T.em && T.vert && !LIST[cur + n] && !T.d) {                    // 嵌在页面里、已经到头：滚页面
+        T.page = true; box.classList.remove("dragging");
+      }
+      e.preventDefault();
+      if (T.page) { scrollTo(0, T.sy - dy); return; }
+      if (!LIST[cur + n]) d *= .3;                                       // 到头了：拖得动，但很沉
+      T.d = d; T.h.push([Date.now(), d]); if (T.h.length > 6) T.h.shift();
+      setDrag(d, T.vert);
+    }, {passive: false});
+    function endDrag(cancel) {
+      var t = T; T = null;
+      if (!t || !t.ax) return;
+      box.classList.remove("dragging");
+      if (t.page) return;
+      var a = t.h[0], b = t.h[t.h.length - 1], vel = a && b ? (b[1] - a[1]) / Math.max(1, b[0] - a[0]) : 0;
+      var im = st.querySelector(":scope > img"), R = im.getBoundingClientRect(), span = (t.vert ? R.height : R.width) || 300;
+      var n = t.d < 0 ? 1 : -1;
+      var ok = !cancel && LIST[cur + n] &&
+               (Math.abs(t.d) > span * .18 || (Math.abs(vel) > .3 && Math.abs(t.d) > 24 && (vel < 0) === (t.d < 0)));
+      if (ok) {
+        var sd = parseFloat(box.style.getPropertyValue("--sd")) || span;
+        box._sdOnce = Math.max(0, sd - Math.abs(t.d));
+        box._dragDone = function () { setDrag(0); };                     // 新的一格载好、开始滑的那一刻再松开
+        if (still) { box._dragDone = null; setDrag(0); }
+        go(cur + n);
+      } else {
+        box.classList.add("snapback"); setDrag(0, t.vert);
+        clearTimeout(box._sb); box._sb = setTimeout(function () { box.classList.remove("snapback"); }, 340);
+      }
+    }
+    st.addEventListener("touchend", function () { endDrag(false); });
+    st.addEventListener("touchcancel", function () { endDrag(true); });
     if (window.ResizeObserver) new ResizeObserver(function () { layout(); }).observe(st);
     else addEventListener("resize", layout);
   }
@@ -458,7 +553,7 @@
     P.setProperty("--x", x + "px"); P.setProperty("--y", y + "px");
     P.setProperty("--w", w + "px"); P.setProperty("--h", h + "px");
     P.setProperty("--sw", S.width + "px"); P.setProperty("--sh", S.height + "px");
-    box.style.setProperty("--sd", Math.min((hz ? w : h) + gap, innerWidth * .6) + "px");
+    if (!box._sdLock) box.style.setProperty("--sd", Math.min((hz ? w : h) + gap, innerWidth * .6) + "px");
     st.style.setProperty("--gx", (x - w * .08) + "px"); st.style.setProperty("--gy", (y - h * .08) + "px");
     st.style.setProperty("--gw", (w * 1.16) + "px"); st.style.setProperty("--gh", (h * 1.16) + "px");
     var aw = hz ? w : w, ah = h;
@@ -688,14 +783,17 @@
       window.__rotFit(im);
       im.classList.remove("ld");
       layout(); setTimeout(layout, 380);
+      if (box._dragDone) { var dd = box._dragDone; box._dragDone = null; dd(); }
       if (slideDir) {
+        if (box._sdOnce != null) { box.style.setProperty("--sd", box._sdOnce + "px"); box._sdLock = true; }
         box.classList.remove("slide-n", "slide-p"); void box.offsetWidth;
         box.classList.add(slideDir > 0 ? "slide-n" : "slide-p"); slideDir = 0;
-        clearTimeout(box._sl); box._sl = setTimeout(function () { box.classList.remove("slide-n", "slide-p"); }, 560);
+        clearTimeout(box._sl); box._sl = setTimeout(function () { box.classList.remove("slide-n", "slide-p"); box._sdLock = false; }, 560);
       }
+      box._sdOnce = null;
       box.dispatchEvent(new CustomEvent("vw:ready", {detail: f}));
     });
-    im.onerror = function () { im.classList.remove("ld"); };
+    im.onerror = function () { im.classList.remove("ld"); if (box._dragDone) { var dd = box._dragDone; box._dragDone = null; dd(); } };
     box.dispatchEvent(new CustomEvent("vw:frame", {detail: f}));
     im.alt = f.cap || (f.rid + " 卷第 " + f.n + " 格");
     box.querySelector(".fno").textContent = f.rid + " · " + f.n;
@@ -775,6 +873,30 @@
     box.querySelector(".bar").classList.toggle("off", !capOn);
     box.querySelector("[data-cap]").setAttribute("aria-pressed", capOn ? "true" : "false");
     cur = -1; go(id in IX ? IX[id] : 0);
+    watchView();
+  }
+  var viewOn = false;
+  function watchView() {
+    if (viewOn) return; viewOn = true;
+    var raf = 0, hinted = false;
+    try { hinted = localStorage.getItem("rolls-swhint") === "1"; } catch (e) {}
+    function upd() {
+      raf = 0;
+      if (!box || !box.classList.contains("embed")) return;
+      var r = box.querySelector(".stage").getBoundingClientRect();
+      var vis = Math.min(r.bottom, innerHeight) - Math.max(r.top, 0), on = r.height > 0 && vis >= r.height * .86;
+      box.classList.toggle("inview", on);
+      if (on && !hinted && box.classList.contains("vert") && matchMedia("(hover:none)").matches) {
+        hinted = true; try { localStorage.setItem("rolls-swhint", "1"); } catch (e) {}
+        var h = document.createElement("div"); h.className = "swhint"; h.textContent = "上下划，换一格";
+        box.querySelector(".stage").appendChild(h);
+        requestAnimationFrame(function () { h.classList.add("on"); });
+        setTimeout(function () { h.classList.remove("on"); setTimeout(function () { h.remove(); }, 500); }, 2600);
+      }
+    }
+    function req() { if (!raf) raf = requestAnimationFrame(upd); }
+    addEventListener("scroll", req, {passive: true}); addEventListener("resize", req);
+    box.addEventListener("vw:layout", req); req();
   }
   function full(on) {
     if (!home || !box) return;
@@ -1928,7 +2050,7 @@ window.INK = (function () {
   var PMK = {}; PMC.forEach(function (c) { PMK[c[0]] = c[2]; });
   var PCS = ls.get("rolls-pc2", null);
   if (!PCS || typeof PCS !== "object") PCS = {fmt: ls.get("rolls-pcstyle", "a"), size: 100, align: "l", per: {}};
-  var PDEF = {size: 100, align: "l", per: {}, showMeta: true, showBrand: true, brandText: "卷 Rolls", stamp: "classic", pm: "duplex", pmFont: "mono", pmCol: "ink"};
+  var PDEF = {size: 100, align: "l", per: {}, showMeta: true, showBrand: true, brandText: "胶卷 Rolls", stamp: "classic", pm: "duplex", pmFont: "mono", pmCol: "ink"};
   for (var pk in PDEF) if (PCS[pk] == null) PCS[pk] = PDEF[pk];
   if (!FM[PCS.fmt]) PCS.fmt = "a";
   function per() { var p = PCS.per[PCS.fmt] || {}, d = FM[PCS.fmt]; return {font: FK[p.font] ? p.font : d.font, col: CK[p.col] ? p.col : d.col}; }
@@ -2057,7 +2179,7 @@ window.INK = (function () {
     ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
     return x - o.px * .65;
   }
-  /* 署名（默认「卷 Rolls」）：右对齐画在 xr 处；关掉或写空就不画 */
+  /* 署名（默认「胶卷 Rolls」）：右对齐画在 xr 处；关掉或写空就不画 */
   function brand(ctx, xr, y, col, px) {
     if (!PCS.showBrand || !PCS.brandText) return;
     ctx.fillStyle = col; ctx.textAlign = "right"; ctx.font = "italic " + px + "px " + LAT.replace("serif", "") + ZH;
@@ -2467,7 +2589,7 @@ window.INK = (function () {
   }
   function save(share) {
     if (!pcCanvas) return;
-    var f = pc._f, name = "卷-" + f.id + "-" + FM[PCS.fmt].n + ".jpg";
+    var f = pc._f, name = "胶卷-" + f.id + "-" + FM[PCS.fmt].n + ".jpg";
     pcCanvas.toBlob(function (b) {
       if (!b) return;
       if (share && navigator.share) {
@@ -2479,4 +2601,53 @@ window.INK = (function () {
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
     }, "image/jpeg", .92);
   }
+})();
+
+/* ══ p25 · 每卷页、卷列表里点一格后出来的小看片台：手机上左右拖着换格 ══
+   片子跟着手指动，拖过五分之一或甩得快就换到上一格 / 下一格（等于点了下面的「上一格 / 下一格」），不然弹回去。
+   上下划照常滚页面。 */
+(function () {
+  "use strict";
+  var T = null;
+  function btnOf(v, n) { var b = v.querySelector('[data-d="' + n + '"]'); return b && !b.disabled ? b : null; }
+  document.addEventListener("touchstart", function (e) {
+    T = null;
+    var st = e.target.closest && e.target.closest("[data-roll] .viewer .stage");
+    if (!st || e.touches.length > 1) return;
+    var im = st.querySelector("img"); if (!im) return;
+    var p = e.touches[0];
+    T = {st: st, im: im, v: st.closest(".viewer"), x: p.clientX, y: p.clientY, ax: 0, d: 0, h: []};
+  }, {passive: true});
+  document.addEventListener("touchmove", function (e) {
+    if (!T) return;
+    var p = e.touches[0], dx = p.clientX - T.x, dy = p.clientY - T.y;
+    if (!T.ax) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dx) < Math.abs(dy) * 1.2) { T = null; return; }
+      T.ax = 1; T.im.classList.add("drag");
+    }
+    var n = dx < 0 ? 1 : -1, d = btnOf(T.v, n) ? dx : dx * .3;
+    e.preventDefault();
+    T.d = d; T.h.push([Date.now(), d]); if (T.h.length > 6) T.h.shift();
+    T.im.style.translate = d.toFixed(1) + "px 0";
+  }, {passive: false});
+  function end() {
+    var t = T; T = null;
+    if (!t || !t.ax) return;
+    var im = t.im, n = t.d < 0 ? 1 : -1, b = btnOf(t.v, n);
+    var a = t.h[0], z = t.h[t.h.length - 1], vel = a && z ? (z[1] - a[1]) / Math.max(1, z[0] - a[0]) : 0;
+    im.classList.remove("drag");
+    var ok = b && (Math.abs(t.d) > (im.getBoundingClientRect().width || 300) * .2 ||
+                   (Math.abs(vel) > .3 && Math.abs(t.d) > 24 && (vel < 0) === (t.d < 0)));
+    if (ok) {
+      im.style.translate = ""; b.click();
+      im.classList.remove("inN", "inP"); void im.offsetWidth; im.classList.add(n > 0 ? "inN" : "inP");
+      setTimeout(function () { im.classList.remove("inN", "inP"); }, 380);
+    } else {
+      im.classList.add("back"); im.style.translate = "";
+      setTimeout(function () { im.classList.remove("back"); }, 340);
+    }
+  }
+  document.addEventListener("touchend", end);
+  document.addEventListener("touchcancel", end);
 })();

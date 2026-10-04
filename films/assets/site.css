@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════════════
-   卷 Rolls —— 暗房 / The Darkroom
+   胶卷 Rolls —— 暗房 / The Darkroom
    一间只点着安全灯的房间。亮的只有灯箱、放大机的光锥，和印相纸。
    字体：Marcellus（标题）· EB Garamond（西文）· 霞鹜文楷（中文）· JetBrains Mono（数据）
    ══════════════════════════════════════════════════════════════════════ */
@@ -1562,3 +1562,110 @@ html.vwon{overscroll-behavior:none}
 :root[data-theme="album"] .idx .cel span{background:none;color:#8F806C}
 :root[data-theme="album"] .idx{box-shadow:0 0 0 1px rgba(21,23,26,.1),0 10px 40px rgba(21,23,26,.12),inset 0 0 60px rgba(140,105,60,.12)}
 @media(max-width:620px){.idx{grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:9px;padding:12px}}
+
+/* ══ p21 · 索引片框：正方形片框（横竖都一样大），画面只在当中那块窗口里，不出框、不压字；
+      红点和卷号在同一条线上、左右对称；暗房主题下灯箱调暗调暖，不晃眼 ══ */
+.idx{grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:clamp(12px,1.3vw,18px)}
+.idx .cel{container-type:inline-size;border-radius:6%}
+/* 窗口 = 片框中间 66% 的正方形；用容器单位（Safari 里百分比的 max-height 不认，画面会撑出框） */
+.idx .cel img,.idx .cel img[data-rot="90"],.idx .cel img[data-rot="270"]{max-width:62%;max-height:62%}
+@supports (width:1cqw){
+  .idx .cel img,.idx .cel img[data-rot="90"],.idx .cel img[data-rot="270"]{max-width:66cqw;max-height:66cqw}
+}
+.idx .cel img{box-shadow:0 0 0 1.5px rgba(25,18,12,.78),0 0 0 3px rgba(255,255,255,.35)}
+/* 片框上的字：卷号左上、格号正下；红点右上，和卷号同一条中线、同样的边距 */
+.idx .cel::before{left:10%;top:7%;font-size:8px;line-height:10px;height:10px;letter-spacing:.12em}
+.idx .cel span{bottom:6.5%;font-size:8px;line-height:10px;letter-spacing:.12em}
+.idx .cel.pick::after{content:"";position:absolute;inset:auto;left:auto;bottom:auto;right:10%;top:calc(7% + 1px);
+  width:8px;height:8px;border-radius:50%;border:0;background:#CF3A22;opacity:1;transform:none;
+  box-shadow:inset 0 -1px 1px rgba(0,0,0,.18),0 .5px 1px rgba(60,20,10,.35)}
+/* 暗房：灯箱还是亮的（器物不跟主题变），只是灯光暗一点、暖一点，四周压暗 */
+:root:not([data-theme="album"]) .idx{
+  background:radial-gradient(120% 90% at 50% 30%,#EFE6D5 0%,#E2D5BF 55%,#C9B89C 100%);
+  box-shadow:0 0 0 1px rgba(255,238,210,.16),0 0 90px rgba(255,214,160,.08),inset 0 0 90px rgba(80,54,26,.32)}
+:root:not([data-theme="album"]) .idx .cel{background:linear-gradient(150deg,#F3EDE3 0%,#E2D8C8 100%)}
+@media(max-width:620px){
+  .idx{grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:10px;padding:12px}
+  .idx .cel::before,.idx .cel span{font-size:7px;line-height:9px;height:9px}
+  .idx .cel.pick::after{width:7px;height:7px}
+}
+
+/* ══ p25 · 手机上的手感 ══════════════════════════════════════════════
+   只在窄屏 / 触屏上生效，电脑上的样子一点不动。 */
+
+/* ── 联系表：一条剪成两半排（半格一行 6 格、全画幅一行 3 格，JS 负责剪），
+      齿孔按真实 135 的比例跟着片子缩放：齿距 4.75mm、孔 2.8×1.98mm、片边 5.5mm（画面高 24mm） */
+@media (max-width:640px){
+  .sheet .row{container-type:inline-size;
+    --fw:calc((100cqw - 17px - 12px - (var(--per) - 1) * 3px) / var(--per));--fh:calc(var(--fw) / var(--ar))}
+  .sheet .strip .frames{padding:calc(var(--fh) * .03) 6px}
+  .sheet .strip .perf{height:calc(var(--fh) * .2);opacity:.9;
+    background-size:calc(var(--fh) * .198) 100%;background-position:calc(var(--fh) * .05) 0;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 475 480' preserveAspectRatio='none'><rect x='97' y='200' width='280' height='198' rx='46' fill='%23F2E6D4'/></svg>")}
+  .sheet.cut .row{margin-bottom:10px}
+  .sheet.cut .row.cont .rl{visibility:hidden}
+  .sheet.cut .scale i{font-size:9px}
+  .sheet .fr.pick::after{left:-2px;right:-2px;top:-2px;bottom:-1px;border-width:1.5px}
+}
+
+/* ── 看片台：手指拖着片条走 ── */
+.vw.dragging .stage > img,.vw.dragging .vl,.vw.dragging .vr,.vw.dragging .vink{transition:none;animation:none}
+.vw.snapback .stage > img{transition:translate .32s cubic-bezier(.2,.8,.25,1),transform .34s cubic-bezier(.2,.8,.25,1),opacity .18s ease}
+.vw.snapback .vl,.vw.snapback .vr,.vw.snapback .vink{transition:translate .32s cubic-bezier(.2,.8,.25,1)}
+/* 嵌在看片台页里、竖着拿手机：片条整个进了屏幕，手指在片条上就是换格；还没进屏幕时照常滚页面 */
+.vw.embed.vert.inview .stage{touch-action:pinch-zoom}
+.vw.embed .swhint{position:absolute;left:50%;bottom:clamp(.8rem,3vh,1.4rem);z-index:6;transform:translateX(-50%);
+  font-family:var(--cjk);font-size:.74rem;letter-spacing:.16em;color:#E7DCCB;white-space:nowrap;pointer-events:none;
+  background:rgba(10,8,6,.72);border:1px solid #3A2E24;border-radius:20px;padding:.38rem .9rem;
+  opacity:0;transition:opacity .4s ease}
+.vw.embed .swhint.on{opacity:1}
+@media (max-width:640px){
+  html:has(.lt[data-embed]){scroll-snap-type:y proximity}
+  .lthome{scroll-snap-align:end}
+}
+
+/* ── 每卷页、卷列表里点一格后出来的小看片台：手机上左右划 ── */
+.viewer .stage{touch-action:pan-y pinch-zoom}
+.viewer .stage img.drag{transition:none}
+.viewer .stage img.back{transition:translate .3s cubic-bezier(.2,.8,.25,1),opacity .2s ease}
+.viewer .stage img.inN{animation:vwInN .34s cubic-bezier(.2,.8,.25,1)}
+.viewer .stage img.inP{animation:vwInP .34s cubic-bezier(.2,.8,.25,1)}
+@keyframes vwInN{from{translate:42px 0;opacity:.2}}
+@keyframes vwInP{from{translate:-42px 0;opacity:.2}}
+
+/* ── 触屏：键盘快捷键提示没用，藏起来；按钮看起来不变，可点范围放大 ── */
+@media (hover:none){
+  .vw .keys{display:none !important}
+  nav.nav ol a,.skin button,.tbtn,.idxbar .tb,.ltchip,.ltdice,.viewer .close,.more{position:relative}
+  nav.nav ol a::after,.skin button::after,.tbtn::after,.idxbar .tb::after,.ltchip::after,.ltdice::after,.viewer .close::after{
+    content:"";position:absolute;inset:-10px -3px}
+  .tbtn{padding:.34rem .62rem}
+  .sheetbar .tools{gap:.45rem}
+}
+
+/* ── 横着拿手机看全屏看片台：照片尽量大，下面那栏收成一行 ── */
+@media (hover:none) and (orientation:landscape) and (max-height:520px){
+  .vw.strip:not(.vert) .stage{padding:3.3rem 11vw .7rem}
+  .vw .anatog{display:none}
+  .vw:not(.showana) .ana{display:none}
+  .vw .bar{padding:.35rem 1.2rem .55rem;row-gap:.2rem}
+  .vw .bar .txt .note{display:none}
+  .vw .bar .meta{display:none}
+  .vw .tools button.ti{height:36px}
+}
+
+/* ── 地图：手机上总图整张放进屏幕。七个地名在这么窄的图上会挤成一团，先不显示——
+      去过的州名留着、点放大一点；每个地方叫什么，看下面每卷那张小图（本来就写得清清楚楚） ── */
+@media (max-width:620px){
+  .usmap{min-width:0}
+  .plotin{overflow:visible;padding:.4rem}
+  .usmap .st:not(.v),.usmap .gl,.usmap .st .ab,.usmap .pt .pl,.usmap .pt .lead{display:none}
+  .usmap .st.v{font-size:30px;letter-spacing:.06em}
+  .usmap .pt .ring{r:12;stroke-width:2.8}
+  .usmap .pt .core{r:5}
+  .usmap .pt .hit{r:30}
+  .usmap .coast{stroke-width:2.6}
+  .usmap .inner{stroke-width:1.3}
+  .usmap .route .rl{stroke-width:3.2;stroke-dasharray:.1 11}
+  .mapsrc{font-size:.66rem}
+}
